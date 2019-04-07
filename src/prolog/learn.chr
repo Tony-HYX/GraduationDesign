@@ -1,0 +1,72 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Eight queens problem
+%% We have known that the rules of rook, bishop, queen can be combination of straight, diagonal. And we want to find the rule of each role.
+
+
+:- module(test,[position/3]).
+
+:- use_module(library(chr)).
+
+:- chr_type pos ---> 0;1;2;3;4;5;6;7.
+:- chr_type type ---> 0;1;2.
+:- chr_constraint position(+pos,+pos,?type). 
+:- chr_constraint conflict/1. 
+
+%%(x,y,type)
+%% x,y : [0,7]    type : [0,2]
+%% straight : X1=:=X2;Y1=:=Y2
+%% diagonal : X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1
+
+%% If return false, it conflicts.
+%% Can be used to learn type. But there are only three types of chess and three types of rules, so we don't use metagol now.
+position(X1,Y1,0), position(X2,Y2,_) # passive ==> (X1=:=X2;Y1=:=Y2) | fail, format('1=', []).
+position(X1,Y1,1), position(X2,Y2,_) # passive ==> (X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | fail, format('2=', []).
+position(X1,Y1,2), position(X2,Y2,_) # passive ==> (X1=:=X2;Y1=:=Y2;X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | fail, format('3=', []).
+s(X) :- position(4,0,0), position(6,1,0), position(1,2,0), position(3,3,1), position(5,3,1), position(3,6,X), position(7,4,2), position(0,5,2).
+%%% member(X,[0,1,2]),\+s(X).
+
+
+%% If return false, it conflicts.
+%% Can be used to learn rules.
+
+%%rule(X1,Y1,X2,Y2):- (X1=:=X2;Y1=:=Y2).
+%%rule(X1,Y1,X2,Y2):- (X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1).
+%%position(X1,Y1,0), position(X2,Y2,_) # passive ==> rule(X1,Y1,X2,Y2) | fail, format('1=', []).
+
+
+
+%%position(X1,Y1,1), position(X2,Y2,_) # passive ==> (X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | fail, format('2=', []).
+%%position(X1,Y1,2), position(X2,Y2,_) # passive ==> (X1=:=X2;Y1=:=Y2;X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | fail, format('3=', []).
+%%% member(X,[0,1,2]), position(4,0,0), position(6,1,X), position(1,2,0), position(3,3,1), position(5,3,1), position(3,6,1), position(7,4,2), position(0,5,2)
+
+
+%% If return true, it conflicts.
+%% Can be used to learn type.
+%%position(X1,Y1,0), position(X2,Y2,_) # passive ==> (X1=:=X2;Y1=:=Y2) | conflict(1), format('1=', []).
+%%position(X1,Y1,1), position(X2,Y2,_) # passive ==> (X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | conflict(1), format('2=', []).
+%%position(X1,Y1,2), position(X2,Y2,_) # passive ==> (X1=:=X2;Y1=:=Y2;X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | conflict(1), format('3=', []).
+%%conflict(X),conflict(Y)  <=> conflict(Z), Z is X+Y, format('4=', []).
+%%conflict(0) <=> fail, format('6=', []).
+%%% member(X,[0,1,2]), position(4,0,0), position(6,0,X), position(1,2,0), position(3,3,1), position(5,3,1), position(3,6,1), position(7,4,2), position(0,5,2),conflict(0)
+
+
+
+
+
+
+%%position(X1,Y1,T1), position(X2,Y2,T2) # passive ==> (X1=:=X2;Y1=:=Y2) | member(T1,[0,1,2]), member(T2,[0,1,2]), (T1=0;T2=0;T1=2;T2=2), format('1:(~d,~d,~d)(~d,~d,~d)~n', [X1,Y1,T1,X2,Y2,T2]).
+
+%%position(X1,Y1,T1), position(X2,Y2,T2) # passive ==> (X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | member(T1,[0,1,2]), member(T2,[0,1,2]), (T1=1;T2=1;T1=2;T2=2), format('2:(~d,~d,~d)(~d,~d,~d)~n', [X1,Y1,T1,X2,Y2,T2]).
+
+%%position(X1,Y1,T1), position(X2,Y2,T2) # passive ==> (X1=:=X2;Y1=:=Y2;X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | member(T1,[0,1,2]), member(T2,[0,1,2]), (T1=2;T2=2), format('3=', []).
+
+%%conflict(X),conflict(Y) <=> conflict(Z), Z is X+Y.
+
+
+
+%% position(4,0,0), position(6,1,0), position(1,2,0), position(3,3,1), position(5,3,1), position(3,6,1), position(7,4,2), position(0,5,2). 
+
+
+%% Abduce its label
+%% Abduce its rules
