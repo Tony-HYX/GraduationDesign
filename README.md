@@ -9,7 +9,7 @@
 ```
 # cd to GraduationDesign
 export NLM_HOME=$PWD
-cp /usr/local/lib/swipl/lib/x86_64-linux/libswipl.so.7 $NLM_HOME/src/logic/lib/  
+cp /usr/local/lib/swipl/lib/x86_64-linux/libswipl.so.7 $NLM_HOME/src/lib/  
 export LD_LIBRARY_PATH=$NLM_HOME/src/lib:/usr/local/cuda:$LD_LIBRARY_PATH  
 # for GPU user
 # /usr/local/cuda:$LD_LIBRARY_PATH  
