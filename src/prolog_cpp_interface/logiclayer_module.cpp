@@ -451,6 +451,48 @@ LogicLayer_conDigitRules(PyObject * self, PyObject *args) {
     return (PyObject *) ans;
 }
 
+
+
+// abduce instance mapping given feature and label
+static PyObject *
+LogicLayer_abduceChessInstFeature(PyObject * self, PyObject *args) {
+    PyObject *ex_and_label_; // input
+    if (!PyArg_ParseTuple(args, "O:abduceChessInstFeature",
+                          &ex_and_label_)) {
+        return NULL;
+    }
+    Py_PlTerm *ex_and_label = (Py_PlTerm *) ex_and_label_;
+
+    fid_t fid = PL_open_foreign_frame();
+    map<string, PlTerm> *var_map1 = new map<string, PlTerm>();
+
+    PlTermv av(1);
+    av[0] = Py2PlTerm(ex_and_label->term_py, var_map1);
+    delete var_map1;
+    
+    PyObject *re = PyList_New(0);
+
+    predicate_t pred = PL_predicate("abduce_consistent_insts", 1, "user");
+    qid_t q = PL_open_query(NULL, PL_Q_NORMAL, pred, av.a0);
+
+    while (PL_next_solution(q)) {
+        Py_PlTerm *t = Py_PlTerm_fromPlTerm(av[0]);
+        Py_INCREF(t);
+        PyList_Append(re, (PyObject *) t);
+    }
+    PL_close_query(q);
+    PL_reset_term_refs(av.a0);
+    PL_discard_foreign_frame(fid);
+
+    Py_INCREF(re);
+    return re;
+}
+
+
+
+
+
+
 /********** Py_PlTerm Methods *********/
 // recursively analyse a prolog term from PyObject
 static PlTerm 

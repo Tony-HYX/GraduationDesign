@@ -51,6 +51,9 @@ static PyObject *
 LogicLayer_abduceInstFeature(PyObject * self, PyObject *args); // abduce instance mapping given feature and label
 
 static PyObject *
+LogicLayer_abduceChessInstFeature(PyObject * self, PyObject *args); // abduce instance mapping given feature and label
+
+static PyObject *
 LogicLayer_abduceConInsts(PyObject * self, PyObject *args); // abduce consistent instances
 
 static PyObject *
@@ -85,6 +88,8 @@ static PyMethodDef LogicLayer_methods[] = {
           PyDoc_STR("evalInstRules(Inst, Rules) -> 0/1. Evaluate instance given a set of my_op rules, 0 for false, 1 for true.") },
         { "abduceInstFeature", LogicLayer_abduceInstFeature, METH_VARARGS,
           PyDoc_STR("abduceInstFeature(Inst, Feature, Label) -> Mapping. Abduce a mapping given logical feature and label.") },
+        { "abduceChessInstFeature", LogicLayer_abduceChessInstFeature, METH_VARARGS,
+          PyDoc_STR("abduceChessInstFeature(Inst) -> Mapping. Abduce a mapping given logical feature and label.") },
         { "abduceConInsts", LogicLayer_abduceConInsts, METH_VARARGS,
           PyDoc_STR("abduceConInsts(Inst, Label) -> Abduce a consistent binding of a set of examples if possible, else return None") },
         { "conInstsFeature", LogicLayer_conInstsFeature, METH_VARARGS,

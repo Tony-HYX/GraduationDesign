@@ -457,18 +457,53 @@ def final_test():
         break
     return out_eqs
 
+
+def test_chess_abduction():
+    print('IV. Test instance abduction given feature and label, the instance should contain at least 1 variable.')
+    print('==================\n')
+    
+    chess1 = LL.PlTerm([4,0,'chess_type(0)'])
+    chess2 = LL.PlTerm([6,1,'chess_type(0)'])
+    chess3 = LL.PlTerm([1,2,'chess_type(0)'])
+    chess4 = LL.PlTerm([3,3,'chess_type(1)'])
+    chess5 = LL.PlTerm([5,3,'chess_type(1)'])
+    chess6 = LL.PlTerm([3,6,'chess_type(X)'])
+    chess7 = LL.PlTerm([7,4,'chess_type(2)'])
+    chess8 = LL.PlTerm([0,5,'chess_type(2)'])
+    chess_all = LL.PlTerm([chess1,chess2,chess3,chess4,chess5,chess6,chess7,chess8])
+    
+    vars = LL.PlTerm(['X'])
+    labels = LL.PlTerm(True)
+    inst = LL.PlTerm([chess_all,vars,labels])
+    insts = LL.PlTerm([inst])
+    
+    print(insts)
+    #[[([[4,0,chess_type(0)], [6,1,chess_type(0)], [1,2,chess_type(0)], [3,3,chess_type(1)], [5,3,chess_type(1)], [3,6,chess_type(X)], [7,4,chess_type(2)], [0,5,chess_type(2)]]),[X],true] ]
+       
+    
+    re1 = LL.abduceChessInstFeature(insts)
+
+
+    print('result ---:')
+    print(re1)
+
+    print('----------END------------\n')
+
+
+
 if __name__ == "__main__":
 
     LL.init("-G10g -M6g") # must initialise prolog engine first!
-    LL.consult('src/prolog/learn_add.pl') # consult the background knowledge file
+    LL.consult('src/prolog/learn.chr') # consult the background knowledge file
     #LL.call("current_prolog_flag(table_space, X), writeln(X)")  #test if stack changed
     LL.call("prolog_stack_property(global, limit(X)), writeln(X)")  #test if stack changed
     
     
+    '''
     test_gen_rand_feature() # test random feature generation
     test_create_PlTerms() # test PlTerm creation, including variables and constants
     test_eval_feature() # test evaluating examples with feature
-    
+    test_abduction()
 
     test_legit_inst() # test evaluation of legitimate instance mapping
     test_parse_inst_feature() # test parsing instance to feature
@@ -478,7 +513,8 @@ if __name__ == "__main__":
     test_consistent_score() # test greedy consistent score function
     
     test_opt_consistent_score() # test consistent score optimisation with zoopt
-
+    '''
+    
     '''
     rules = final_test()
     print('my_op Rules: ')
@@ -504,5 +540,5 @@ if __name__ == "__main__":
         print(LL.PlTerm('_'))
         print (time.time() - t)
     '''
-    # test_abduction() # test abduction
+    test_chess_abduction()
     #LL.halt() # clean prolog stack
