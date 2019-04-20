@@ -462,24 +462,40 @@ def test_chess_abduction():
     print('IV. Test instance abduction given feature and label, the instance should contain at least 1 variable.')
     print('==================\n')
     
-    chess1 = LL.PlTerm([4,0,'chess_type(0)'])
-    chess2 = LL.PlTerm([6,1,'chess_type(0)'])
-    chess3 = LL.PlTerm([1,2,'chess_type(0)'])
-    chess4 = LL.PlTerm([3,3,'chess_type(1)'])
-    chess5 = LL.PlTerm([5,3,'chess_type(1)'])
-    chess6 = LL.PlTerm([3,6,'chess_type(X)'])
-    chess7 = LL.PlTerm([7,4,'chess_type(2)'])
-    chess8 = LL.PlTerm([0,5,'chess_type(2)'])
-    chess_all = LL.PlTerm([chess1,chess2,chess3,chess4,chess5,chess6,chess7,chess8])
+    chess1_1 = LL.PlTerm([4,0,0])
+    chess1_2 = LL.PlTerm([6,1,0])
+    chess1_3 = LL.PlTerm([1,2,0])
+    chess1_4 = LL.PlTerm([3,3,1])
+    chess1_5 = LL.PlTerm([5,3,1])
+    chess1_6 = LL.PlTerm([3,6,'X'])
+    chess1_7 = LL.PlTerm([7,4,2])
+    chess1_8 = LL.PlTerm([0,5,'Y'])
+    chess_1_all = LL.PlTerm([chess1_1,chess1_2,chess1_3,chess1_4,chess1_5,chess1_6,chess1_7,chess1_8])
     
-    vars = LL.PlTerm(['X'])
-    labels = LL.PlTerm(True)
-    inst = LL.PlTerm([chess_all,vars,labels])
-    insts = LL.PlTerm([inst])
+    vars_1 = LL.PlTerm(['X','Y'])
+    labels_1 = LL.PlTerm(False)
+    inst_1 = LL.PlTerm([chess_1_all,vars_1,labels_1])
+    
+    
+    chess2_1 = LL.PlTerm([4,0,0])
+    chess2_2 = LL.PlTerm([6,1,0])
+    chess2_3 = LL.PlTerm([1,2,0])
+    chess2_4 = LL.PlTerm([3,3,1])
+    chess2_5 = LL.PlTerm([5,3,1])
+    chess2_6 = LL.PlTerm([3,6,'X2'])
+    chess2_7 = LL.PlTerm([7,4,2])
+    chess2_8 = LL.PlTerm([0,5,2])
+    chess_2_all = LL.PlTerm([chess2_1,chess2_2,chess2_3,chess2_4,chess2_5,chess2_6,chess2_7,chess2_8])
+    
+    vars_2 = LL.PlTerm(['X2'])
+    labels_2 = LL.PlTerm(True)
+    inst_2 = LL.PlTerm([chess_2_all,vars_2,labels_2])
+    
+    insts = LL.PlTerm([inst_1,inst_2])
     
     print(insts)
-    #[[([[4,0,chess_type(0)], [6,1,chess_type(0)], [1,2,chess_type(0)], [3,3,chess_type(1)], [5,3,chess_type(1)], [3,6,chess_type(X)], [7,4,chess_type(2)], [0,5,chess_type(2)]]),[X],true] ]
-       
+    #[[([[4,0,0], [6,1,0], [1,2,0], [3,3,1], [5,3,1], [3,6,X], [7,4,2], [0,5,2]]),[X],true] ]
+    
     
     re1 = LL.abduceChessInstFeature(insts)
 

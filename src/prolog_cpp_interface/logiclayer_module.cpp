@@ -469,7 +469,7 @@ LogicLayer_abduceChessInstFeature(PyObject * self, PyObject *args) {
     PlTermv av(1);
     av[0] = Py2PlTerm(ex_and_label->term_py, var_map1);
     delete var_map1;
-    
+
     PyObject *re = PyList_New(0);
 
     predicate_t pred = PL_predicate("abduce_consistent_insts", 1, "user");
@@ -487,7 +487,6 @@ LogicLayer_abduceChessInstFeature(PyObject * self, PyObject *args) {
     Py_INCREF(re);
     return re;
 }
-
 
 
 
@@ -514,9 +513,9 @@ Py2PlTerm(PyObject *atom, map<string, PlTerm> *var_map) {
         // do compound analyse
         if (Py_PlTerm_Check(atom)) { // if is already a Py_PlTerm
             Py_INCREF(atom);
-            map<string, PlTerm> *var_map_t = new map<string, PlTerm>(); 
-            re = Py2PlTerm(((Py_PlTerm *) atom)->term_py, var_map_t);
-            delete var_map_t;
+            //map<string, PlTerm> *var_map_t = new map<string, PlTerm>(); 
+            re = Py2PlTerm(((Py_PlTerm *) atom)->term_py, var_map);
+            //delete var_map_t;
             //cout << "Org Py_PlTerm: " << (char *) *t << endl;
             //cout << "re: " << (char *) re << endl;
         }
@@ -533,11 +532,15 @@ Py2PlTerm(PyObject *atom, map<string, PlTerm> *var_map) {
             re = PlTerm(PyFloat_AsDouble(atom));
         } else if (PyUnicode_Check(atom)) {
             string word(PyBytes_AsString(PyUnicode_AsUTF8String(atom)));
+            cout<<word<<endl;////////////////////
             if ((word.size() >= 1 && std::isupper(word[0]))
                 || (word.size() > 1 && word[0] == '_')) { // named var
+                for(auto iter = var_map->begin(); iter != var_map->end(); iter++)
+                    cout << (iter->first) << " : " << endl;
                 auto iter = var_map->find(word);
                 if (iter != var_map->end()) { // if the var has appeared before
                     re = iter->second;
+                    cout<<"word "<<word<<" appear again"<<endl;////////////////////
                 } else {
                     re = PlTerm();
                     var_map->insert(pair<string, PlTerm>(word, re));
