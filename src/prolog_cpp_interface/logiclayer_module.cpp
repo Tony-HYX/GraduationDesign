@@ -532,15 +532,11 @@ Py2PlTerm(PyObject *atom, map<string, PlTerm> *var_map) {
             re = PlTerm(PyFloat_AsDouble(atom));
         } else if (PyUnicode_Check(atom)) {
             string word(PyBytes_AsString(PyUnicode_AsUTF8String(atom)));
-            cout<<word<<endl;////////////////////
             if ((word.size() >= 1 && std::isupper(word[0]))
                 || (word.size() > 1 && word[0] == '_')) { // named var
-                for(auto iter = var_map->begin(); iter != var_map->end(); iter++)
-                    cout << (iter->first) << " : " << endl;
                 auto iter = var_map->find(word);
                 if (iter != var_map->end()) { // if the var has appeared before
                     re = iter->second;
-                    cout<<"word "<<word<<" appear again"<<endl;////////////////////
                 } else {
                     re = PlTerm();
                     var_map->insert(pair<string, PlTerm>(word, re));

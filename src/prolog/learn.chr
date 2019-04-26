@@ -8,7 +8,6 @@
 
 :- use_module(library(chr)).
 
-
 :- chr_constraint chess/3. 
 
 
@@ -26,39 +25,46 @@ chess(X1,Y1,2), chess(X2,Y2,_) # passive ==> (X1=:=X2;Y1=:=Y2;X1-X2=:=Y1-Y2;X1-X
 %%% s(X) :- chess(4,0,chess_type(0)), chess(6,1,chess_type(0)), chess(1,2,chess_type(0)), chess(3,3,chess_type(1)), chess(5,3,chess_type(1)), chess(3,6,chess_type(X)), chess(7,4,chess_type(2)), chess(0,5,chess_type(2)).
 %%% member(X,[0,1,2]),\+s(X).
 
-%% eval_chess([[4,0,chess_type(0)], [6,1,chess_type(0)], [1,2,chess_type(0)], [3,3,chess_type(1)], [5,3,chess_type(1)], [3,6,chess_type(1)], [7,4,chess_type(2)], [0,5,chess_type(2)]]).
-eval_chess(Exs):-
+
+%% eval_chess_insts([[[[4,0,0], [6,1,0], [1,2,0], [3,3,1], [5,3,1], [3,6,1], [7,4,2], [0,5,2]],true] ]).
+eval_chess_insts([Parameter|Parameters]):-
+    %writeln(Parameter),
+    Fun =.. [eval_chess|Parameter],
+    writeln(Fun),
+    call(Fun),
+    eval_chess_insts(Parameters).
+eval_chess_insts([]).
+
+%% eval_chess([[4,0,0], [6,1,0], [1,2,0], [3,3,1], [5,3,1], [3,6,1], [7,4,2], [0,5,2]],true).
+eval_chess(Exs,Label):-
     ground(Exs),
     add_chess(Exs,ChessExs),
     list_to_conj(ChessExs,ChessExsConj),
-    call(ChessExsConj).
+    (Label -> call(ChessExsConj) ; (\+ call(ChessExsConj))).
 
 
+% abduce_consistent_insts([[[[4,0,0], [6,1,0], [1,2,0], [3,3,1], [5,3,1], [3,6,X], [7,4,2], [0,5,2]],[X],true] ]).
 abduce_consistent_insts([Parameter|Parameters]):-
     Fun =.. [abduce_consistent_inst|Parameter],
-    writeln(Fun),
+    %writeln(Fun),
     call(Fun),
     abduce_consistent_insts(Parameters).
 abduce_consistent_insts([]).
 
-% abduce_consistent_insts([[([[4,0,0], [6,1,0], [1,2,0], [3,3,1], [5,3,1], [3,6,X], [7,4,2], [0,5,2]]),[X],true] ]).
-
 % abduce_consistent_inst(([[4,0,chess_type(0)], [6,1,chess_type(0)], [1,2,chess_type(0)], [3,3,chess_type(1)], [5,3,chess_type(1)], [3,6,chess_type(X)], [7,4,chess_type(2)], [0,5,chess_type(2)]]),[X],true).
 % abduce_consistent_inst(([[4,0,chess_type(0)], [6,1,chess_type(0)], [1,2,chess_type(0)], [3,3,chess_type(1)], [5,3,chess_type(1)], [3,6,chess_type(X)], [7,4,chess_type(2)], [0,5,chess_type(Y)]]),[X,Y],true).
-
-abduce_consistent_inst(Exs,Vars,Labels):-
+abduce_consistent_inst(Exs,Vars,Label):-
     add_member(Vars,X_mem),
     add_chess(Exs,ChessExs),
     list_to_conj(ChessExs,ChessExsConj),
     %writeln(ChessExsConj),
-    (Labels -> ChessExsConjLabel=[(ChessExsConj)] ; ChessExsConjLabel=[\+ (ChessExsConj)]),
+    (Label -> ChessExsConjLabel=[(ChessExsConj)] ; ChessExsConjLabel=[\+ (ChessExsConj)]),
     %writeln(ChessExsConjLabel),
     append(X_mem,ChessExsConjLabel,X),
     list_to_conj(X,Y),
-    writeln(Y),
+    %writeln(Y),
     call(Y).
     
-
 add_chess([Ex|Exs],[ChessEx|ChessExs]):-
     ChessEx =..[chess|Ex],
     add_chess(Exs,ChessExs).
