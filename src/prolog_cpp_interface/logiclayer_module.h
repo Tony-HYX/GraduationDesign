@@ -45,6 +45,12 @@ static PyObject *
 LogicLayer_evalInstFeature(PyObject * self, PyObject *args); // evaluate instance with feature return true/false (1/0)
 
 static PyObject *
+LogicLayer_evalChessLabelInsts(PyObject * self, PyObject *args); // evaluate instance with feature return true/false (1/0)
+
+static PyObject *
+LogicLayer_evalChess(PyObject * self, PyObject *args);       // evaluate instance with feature return true/false (1/0)
+
+static PyObject *
 LogicLayer_evalInstRules(PyObject * self, PyObject *args); // evaluate instance with a list of my_op rules and return true/false (1/0)
 
 static PyObject *
@@ -84,6 +90,10 @@ static PyMethodDef LogicLayer_methods[] = {
           PyDoc_STR("LogicLayer_parseInstFeature(Inst) -> parse an instance as feature.") },
         { "evalInstFeature", LogicLayer_evalInstFeature, METH_VARARGS,
           PyDoc_STR("evalInstFeature(Inst, Feature) -> 0/1. Evaluate instance given a logical feature, 0 for false, 1 for true.") },
+        { "evalChessLabelInsts", LogicLayer_evalChessLabelInsts, METH_VARARGS,
+          PyDoc_STR("evalChessLabelInsts(Insts) -> 0/1. Evaluate instance given a logical feature, 0 for false, 1 for true.") },
+        { "evalChess", LogicLayer_evalChess, METH_VARARGS,
+          PyDoc_STR("evalChess(Inst) -> 0/1. Evaluate a instance given a logical feature, 0 for false, 1 for true.") },
         { "evalInstRules", LogicLayer_evalInstRules, METH_VARARGS,
           PyDoc_STR("evalInstRules(Inst, Rules) -> 0/1. Evaluate instance given a set of my_op rules, 0 for false, 1 for true.") },
         { "abduceInstFeature", LogicLayer_abduceInstFeature, METH_VARARGS,

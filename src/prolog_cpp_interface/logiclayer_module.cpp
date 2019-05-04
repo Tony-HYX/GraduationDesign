@@ -489,6 +489,59 @@ LogicLayer_abduceChessInstFeature(PyObject * self, PyObject *args) {
 }
 
 
+// evaluate instance with feature return true/false (1/0)
+static PyObject *
+LogicLayer_evalChessLabelInsts(PyObject * self, PyObject *args) {
+    PyObject *ex_and_label_; // input
+    if (!PyArg_ParseTuple(args, "O:evalChessLabelInsts", &ex_and_label_)) {
+        return NULL;
+    }
+    Py_PlTerm *ex_and_label = (Py_PlTerm *) ex_and_label_;
+    fid_t fid = PL_open_foreign_frame();
+    PlTermv av(1);
+    map<string, PlTerm> *var_map1 = new map<string, PlTerm>();
+    av[0] = Py2PlTerm(ex_and_label->term_py, var_map1);
+    delete var_map1;
+    
+    predicate_t pred = PL_predicate("eval_chess_label_insts", 1, "user");
+    qid_t q = PL_open_query(NULL, PL_Q_NORMAL, pred, av.a0);
+    
+    int result = PL_next_solution(q) ? 1 : 0;
+    PL_close_query(q);
+    PL_reset_term_refs(av.a0);
+    PL_discard_foreign_frame(fid);
+    PyObject *ans = PyBool_FromLong(result);
+    Py_INCREF(ans);
+    return (PyObject *) ans;
+}
+
+
+// evaluate instance with feature return true/false (1/0)
+static PyObject *
+LogicLayer_evalChess(PyObject * self, PyObject *args) {
+    PyObject *ex_; // input
+    if (!PyArg_ParseTuple(args, "O:evalChess", &ex_)) {
+        return NULL;
+    }
+    Py_PlTerm *ex = (Py_PlTerm *) ex_;
+    fid_t fid = PL_open_foreign_frame();
+    PlTermv av(1);
+    map<string, PlTerm> *var_map1 = new map<string, PlTerm>();
+    av[0] = Py2PlTerm(ex->term_py, var_map1);
+    delete var_map1;
+    
+    predicate_t pred = PL_predicate("eval_chess", 1, "user");
+    qid_t q = PL_open_query(NULL, PL_Q_NORMAL, pred, av.a0);
+    
+    int result = PL_next_solution(q) ? 1 : 0;
+    PL_close_query(q);
+    PL_reset_term_refs(av.a0);
+    PL_discard_foreign_frame(fid);
+    PyObject *ans = PyBool_FromLong(result);
+    Py_INCREF(ans);
+    return (PyObject *) ans;
+}
+
 
 
 

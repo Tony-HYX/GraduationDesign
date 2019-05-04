@@ -45,6 +45,12 @@ def check_conflict(x, y, type, ret):
         if type<0 or type>2:
             print("Error type!!")
     return False
+    
+def seem_to_conflict(x, y, ret):
+    for [x1,y1,type1] in ret:
+        if x1==x or y1==y or x1-x==y1-y or x1-x==y-y1:
+            return True
+    return False
 
 def generator_chess(chessboard_size, label):
     ret = []
@@ -60,6 +66,9 @@ def generator_chess(chessboard_size, label):
             y = random.randint(0,chessboard_size-1)
             if [x,y] in used_chess:
                 continue
+            if not seem_to_conflict(x,y,ret): # If not seem to conflict, then drop this chess with 80%
+                if random.randint(0,9)>=2:
+                    continue
             type = random.randint(0,2)
             if check_conflict(x,y,type,ret): 
                 conflict_cnt += 1
@@ -67,7 +76,7 @@ def generator_chess(chessboard_size, label):
                 used_chess.append([x,y])
                 ret.append([x,y,type])
                 conflict_cnt = 0
-            if conflict_cnt >= 10: #If conflict, then retry, if conflict continuously ten times, over
+            if conflict_cnt >= 20: #If conflict, then retry, if conflict continuously ten times, over
                 if len(used_chess) >= chessboard_size/2:
                     break;
                 else:
@@ -117,9 +126,10 @@ def generator_chess_images(image_pools, chessboards, shape, seed, is_color):
             pick = random.randint(0, len(image_pools[index]) - 1)
             if is_color:
                 image = Image.open(image_pools[index][pick]).convert('RGB').resize(shape)
+                image_array = np.array(image).reshape((shape[0],shape[1],3))
             else:
                 image = Image.open(image_pools[index][pick]).convert('I').resize(shape)
-            image_array = np.array(image)
+                image_array = np.array(image).reshape((shape[0],shape[1],1))
             image_array = (image_array-127)*(1./128)
             data.append([chess[0],chess[1],image_array])
         ret.append(data)
@@ -162,6 +172,8 @@ Illegal(Conflict):
 Not too much chess...
 Stop when the first conflict encountered
 If a chess is a line or a diag, it can also be a line-diag.
+
+You cannot distinguish a chessboard without label
 '''
 
 if __name__ == "__main__":
@@ -169,10 +181,10 @@ if __name__ == "__main__":
                     sign_dir_lists = ['0', '1', '2'],\
                     shape = (28, 28),\
                     min_chessboard_size = 3,\
-                    max_chessboard_size = 6,\
+                    max_chessboard_size = 8,\
                     tmp_file_prev = "bin_chess_data",\
-                    train_num_per_size = 100, \
-                    test_num_per_size = 20, \
+                    train_num_per_size = 500, \
+                    test_num_per_size = 200, \
                     is_color = False
                     )
     
