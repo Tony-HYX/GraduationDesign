@@ -79,7 +79,7 @@ add_chess([],[]).
 
 % [_1,_2,_3,_4]
 add_member([Var|Vars],[Member_re|Member_res]):-
-    Member_re =..[member,Var,[0,1,2]],
+    Member_re =..[member,Var,[2,1,0]],
     add_member(Vars,Member_res).
 add_member([],[]).
 

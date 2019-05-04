@@ -128,15 +128,22 @@ def current_model_accuracy(model, src_path, labels, input_shape, abduced_map):
     print("\nEvaluating current model's perception accuracy...")
     X, Y = get_img_data(src_path, labels, input_shape)
     for mapping in gen_mappings([0,1,2], [0,1,2]):
-        print(mapping)
+        print('\n',mapping)
         real_Y = []
+        correct_cnt = np.array([0]*len(labels))
+        label_cnt = np.array([0]*len(labels))
         for y in Y:
             real_Y.append(mapping[np.argmax(y)]) #abduced_map
+        
+        predict_Y = np.argmax(model.predict(X), axis=1)
+        for (real_y,predict_y) in zip(real_Y,predict_Y):
+            if real_y==predict_y:
+                correct_cnt[real_y] += 1
+            label_cnt[real_y] += 1
+        print(correct_cnt)
+        print(label_cnt)
+        print('Test accuracy: ', correct_cnt.sum()/label_cnt.sum())
             
-        real_Y = np_utils.to_categorical(real_Y, num_classes=len(labels))
-        loss, accuracy = model.evaluate(X, real_Y, verbose=0)
-        print('Test loss: ', loss)
-        print('Test accuracy: ', accuracy)
 
 def LL_init(pl_file_path = "src/prolog/learn.chr"):
     print("Initializing prolog...")
@@ -231,20 +238,29 @@ def translate_image_to_label(model, chessboards, mapping): # chessboard has no t
     return exs
 
 def evaluate_data(model, chessboards_true, chessboards_false, mapping):
-    correct_cnt = 0
+    correct_cnt_true = 0
+    correct_cnt_false = 0
     exs_true = translate_image_to_label(model, chessboards_true, mapping) 
     exs_false = translate_image_to_label(model, chessboards_false, mapping) 
     for ex in exs_true:
         re = LL.evalChess(LL.PlTerm(ex))
         if re==True:
-            correct_cnt += 1
+            correct_cnt_true += 1
     for ex in exs_false:
         re = LL.evalChess(LL.PlTerm(ex))
         if re==False:
-            correct_cnt += 1
+            correct_cnt_false += 1
     #Get MLP validation result
-    accuracy = correct_cnt / (len(exs_true)+len(exs_false))
-    return accuracy
+    if len(exs_true) != 0:
+        true_accuracy = correct_cnt_true / len(exs_true)
+    else:
+        true_accuracy = 99
+    if len(exs_false) != 0:
+        false_accuracy = correct_cnt_false / len(exs_false)
+    else:
+        false_accuracy = 99
+    total_accuracy = (correct_cnt_true+correct_cnt_false) / (len(exs_true)+len(exs_false))
+    return true_accuracy, false_accuracy, total_accuracy
 
 def get_abduced_chessboards_labels(model, chessboards, maps = None, for_mlp_vector = False, shape = (28, 28, 1)):
     # Get the model's output
@@ -359,9 +375,6 @@ def random_select_chessboards(chessboards_true, chessboards_false, SELECT_NUM):
     select_chessboards = []
     select_chessboards_false = []
     
-    if len(chessboards_true)==0 or len(chessboards_false)==0:
-        SELECT_NUM *= 2
-    
     if len(chessboards_true)>0:
         select_index = np.random.randint(len(chessboards_true), size=SELECT_NUM)
         select_index = np.unique(select_index)
@@ -433,13 +446,14 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
         print("Course number:",course_num)
         for mapping in gen_mappings([0,1,2], [0,1,2]):
             print(mapping)
-            accuracy = evaluate_data(correct_model, chessboards_true_by_len[course_num], chessboards_false_by_len[course_num], mapping) #mapping
-            print(accuracy)
+            true_accuracy,false_accuracy,total_accuracy = evaluate_data(correct_model, chessboards_true_by_len[course_num], chessboards_false_by_len[course_num], mapping) #mapping
+            print(true_accuracy,false_accuracy,total_accuracy)
     input()
     '''
     
     abduced_map = None
     for course_num in range(0, max(len(chessboards_true_by_len),len(chessboards_false_by_len)) ): #for each size of chessboards
+        # Prevent invalid index
         if course_num>=len(chessboards_true_by_len_train):
             chessboards_true = []
         else:
@@ -447,8 +461,20 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
         if course_num>=len(chessboards_false_by_len_train):
             chessboards_false = []
         else:
-            chessboards_false = chessboards_false_by_len_train[course_num]
-        
+            chessboards_false = chessboards_false_by_len_train[course_num]######################################
+        if course_num>=len(chessboards_true_by_len_validation):
+            chessboards_true_val = []
+        else:
+            chessboards_true_val = chessboards_true_by_len_validation[course_num]
+        if course_num>=len(chessboards_false_by_len_validation):
+            chessboards_false_val = []
+        else:
+            chessboards_false_val = chessboards_false_by_len_validation[course_num]
+        # If cannot learn or validate
+        if (len(chessboards_true)==0 and len(chessboards_false)==0) \
+          or (len(chessboards_true_val)==0 and len(chessboards_false_val)==0):
+            continue
+            
         condition_cnt = 0  #the times that the condition of beginning to evaluate is continuously satisfied
         accuracy = 0  #accuracy of evaluation
         while True: 
@@ -481,12 +507,12 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
                 label_mapped = apply_mapping_chess(chessboard, abduced_map)
                 print(label_mapped, end=' ')
             
-            print("\nThis is the label of model after abduce(after using map):")
+            #print("\nThis is the label of model after abduce(after using map):")
             model_labels = []
             for id in consistent_ex_ids:
                 model_label = get_format_data_from_model(base_model, [select_chessboards[id]])[0]
                 model_label_mapped = apply_mapping_chess(model_label, abduced_map)
-                print(model_label_mapped, end=' ')
+                #print(model_label_mapped, end=' ')
                 model_labels.append(model_label)
                 
             print("\nThis is the correct label of model:")
@@ -498,7 +524,7 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
             model_img_labels = np.array(get_chess_img_or_label(model_labels))
             assert(len(model_img_labels)==len(abduced_labels))
             batch_label_model_precision = ((model_img_labels==abduced_labels).sum()/len(model_img_labels))
-            consistent_percentage = len(consistent_ex_ids)/(SELECT_NUM*2)
+            consistent_percentage = len(consistent_ex_ids)/len(select_chessboards)
             
             # Test if we can evaluate
             # The condition is: consistent_percentage>=0.8 && batch_label_model_precision>0.8
@@ -509,16 +535,16 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
             print(abduced_labels)
             print(batch_label_model_precision)
             '''
-            print("\nConsistent_percentage:", consistent_percentage)
-            
-            if consistent_percentage>=0.8 and batch_label_model_precision>0.8:
+            print("\nConsistent percentage:", consistent_percentage)
+            print("Batch label model precision:", batch_label_model_precision)
+            if consistent_percentage>=0.9 and batch_label_model_precision>=0.9:
                 condition_cnt += 1
             else:
                 condition_cnt = 0
             
             
             #The condition has been satisfied continuously seven times
-            if condition_cnt>=7: 
+            if condition_cnt>=10: 
                 '''
                 #Generate several rules
                 #Get training data and label and split it into train and evaluate
@@ -558,30 +584,24 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
                 print("Abduced map:", abduced_map)
                 #for mapping in gen_mappings([0,1,2], [0,1,2]):
                 #    print(mapping)
-                if course_num>=len(chessboards_true_by_len_validation):
-                    chessboards_true_val = []
-                else:
-                    chessboards_true_val = chessboards_true_by_len_validation[course_num]
-                if course_num>=len(chessboards_false_by_len_validation):
-                    chessboards_false_val = []
-                else:
-                    chessboards_false_val = chessboards_false_by_len_validation[course_num]
-                accuracy = evaluate_data(base_model, chessboards_true_val, chessboards_false_val, abduced_map) #mapping
-                print("Validation accuracy:", accuracy)
+                true_accuracy,false_accuracy,total_accuracy = evaluate_data(base_model, chessboards_true_val, chessboards_false_val, abduced_map) #mapping
+                print("Validation accuracy:", true_accuracy, false_accuracy, total_accuracy)
                 
                 current_model_accuracy(base_model, './dataset/mnist_images', labels, shape, abduced_map)
                 #input()
-                if accuracy > 0.85: #Save model and go to next course
+                if true_accuracy > 0.8 and false_accuracy > 0.8 and total_accuracy > 0.88: #Save model and go to next course
                     base_model.save_weights('%s_nlm_weights_%d.hdf5'%(src_data_name, course_num))
                     break
                 else:
+                    '''
                     # Restart current course: reload model
                     if course_num==0:
                         for i in range(len(base_model.layers)):
                             base_model.layers[i].set_weights(t_model.layers[i].get_weights())
                     else:
                         base_model.load_weights('%s_nlm_weights_%d.hdf5'%(src_data_name, course_num-1))
-                    print("Failed! Reload model.")
+                    '''
+                    print("Failed! Continue to train.")
                     condition_cnt = 0
             
     '''
@@ -658,12 +678,13 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
             chessboards_false = []
         else:
             chessboards_false = chessboards_false_by_len_test[course_num]
-        accuracy = evaluate_data(base_model, chessboards_true, chessboards_false, abduced_map)
-        print("Testing accuracy:", accuracy)
+        true_accuracy,false_accuracy,total_accuracy = evaluate_data(base_model, chessboards_true, chessboards_false, abduced_map)
+        
+        print("Testing accuracy:", true_accuracy,false_accuracy,total_accuracy)
         
     print("**Now test the whole test dataset**")
-    accuracy = evaluate_data(base_model, input_file_true_test, input_file_false_test, abduced_map)
-    print("Testing accuracy:", accuracy)
+    true_accuracy,false_accuracy,total_accuracy = evaluate_data(base_model, input_file_true_test, input_file_false_test, abduced_map)
+    print("Testing accuracy:", true_accuracy,false_accuracy,total_accuracy)
     
     current_model_accuracy(base_model, './dataset/mnist_images', labels, shape, abduced_map)
     
