@@ -360,6 +360,16 @@ def consistent_score_sets_chess(exs, var_ids_flat, mapping):
                 temp_var_ids.append(var_ids[i])
 
             con_res = consistent_score_mapped_chess(temp_exs, temp_var_ids, mapping)
+            
+            #print(temp_exs)
+            #print(temp_var_ids)
+            #print(mapping)
+            #if con_res is None:
+            #    print("Fail")
+            #else:
+            #    print(con_res)
+            #print()
+            
             if not con_res:
                 if len(temp_ids) > 1:
                     temp_ids.pop()
@@ -382,7 +392,7 @@ def consistent_score_sets_chess(exs, var_ids_flat, mapping):
 
     #consistent_set_size.sort()
     data = [(consistent_set_size, consistent_res) for consistent_set_size, consistent_res in zip(consistent_set_size,consistent_res)] #先转化成元组
-    data.sort(reverse=True) #按照降序排序
+    data.sort(key = lambda i:i[0], reverse=True) #按照降序排序
     consistent_set_size = [consistent_set_size for consistent_set_size,consistent_res in data] #将排好序的分数姓名的元组分开
     consistent_res = [consistent_res for consistent_set_size,consistent_res in data]
 
