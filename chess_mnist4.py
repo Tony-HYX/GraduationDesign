@@ -9,12 +9,13 @@ import keras
 import pickle
 from keras.utils import np_utils
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Conv2D, MaxPooling2D, Flatten, BatchNormalization
+from keras.layers import Dense, Activation, Conv2D, MaxPooling2D, Flatten, BatchNormalization, LSTM, TimeDistributed, Dropout
 from keras.optimizers import Adam
 from keras import optimizers
 from models import NN_model
 from PIL import Image
 from functools import partial
+import time
 
 import sys
 sys.path.insert(0, 'src/lib/')
@@ -99,6 +100,103 @@ def net_model_test(src_path, labels, src_data_name, shape = (28, 28, 1)):
     loss, accuracy = model.evaluate(X_test, y_test)
     print('\ntest loss: ', loss)
     print('\ntest accuracy: ', accuracy)
+
+
+def gen_lstm_data(chessboards,shape):
+    h = shape[0]
+    w = shape[1]
+    d = shape[2]
+    ret = []
+    
+    chess_img = Image.new('L',(w,h),color="white")
+    image_array = np.array(chess_img).reshape((w,h,d))
+    image_array = (image_array-127)*(1./128)
+    
+    for chessboard in chessboards:
+        data = []
+        for x in range(8):
+            for y in range(8): 
+                found = False
+                for chess in chessboard:
+                    if x==chess[0] and y==chess[1]:
+                        found = True
+                        data.append(chess[2])
+                        break
+                if found==False:
+                    data.append(image_array)
+        ret.append(data)
+    return ret
+
+def lstm_model_test(src_data_file, shape = (28, 28, 1)):
+    h = shape[0]
+    w = shape[1]
+    d = shape[2]
+    
+    with open('bin_chess_data_chessboard_size_3_8.pk', 'rb') as f:
+        chessboards=pickle.load(f)
+    chessboards_true = chessboards['train:positive']
+    chessboards_false = chessboards['train:negative']
+    chessboards_true_test = chessboards['test:positive'] 
+    chessboards_false_test = chessboards['test:negative']
+    
+    X = gen_lstm_data(chessboards_true,shape)
+    Y = [1]*len(chessboards_true)
+    X.extend(gen_lstm_data(chessboards_false,shape))
+    Y.extend([0]*len(chessboards_false))
+    X_test = gen_lstm_data(chessboards_true_test,shape)
+    Y_test = [1]*len(chessboards_true_test)
+    X_test.extend(gen_lstm_data(chessboards_false_test,shape))
+    Y_test.extend([0]*len(chessboards_false_test))
+    
+    X = np.array(X)
+    Y = np.array(Y)
+    X_test = np.array(X_test)
+    Y_test = np.array(Y_test)
+    
+    index = np.array(list(range(len(X))))
+    np.random.shuffle(index)
+    X = X[index]
+    Y = Y[index]
+    index = np.array(list(range(len(X_test))))
+    np.random.shuffle(index)
+    X_test = X_test[index]
+    Y_test = Y_test[index]
+    
+    X_train = X[:len(X)//5*4]
+    Y_train = Y[:len(Y)//5*4]
+    X_val = X[len(X)//5*4:]
+    Y_val = Y[len(Y)//5*4:]
+    
+    print("Start training the LSTM model...")
+    print("Train size:", len(X_train))
+    print("Test size:", len(X_test))
+    #parameters for LSTM
+    nb_lstm_outputs = 256  #神经元个数
+    nb_time_steps = 8*8  #时间序列长度
+    nb_input_vector = 7*7*64 #输入序列
+    
+    cnn = Sequential()
+    cnn.add(Conv2D(input_shape=(h, w, d), kernel_size=(5, 5), filters=32, activation='relu'))
+    cnn.add(MaxPooling2D(pool_size=(2,2), strides=2, padding='same'))
+    cnn.add(BatchNormalization()) # BN is good 
+    cnn.add(Conv2D(kernel_size=(5, 5), filters=64,  activation='relu', padding='same'))
+    cnn.add(MaxPooling2D(pool_size=(2,2), strides=2, padding='same'))
+    cnn.add(BatchNormalization()) # BN is useful
+    cnn.add(Flatten())
+    cnn.add(Dropout(0.5))
+    
+    model = Sequential()
+    model.add(TimeDistributed(cnn, input_shape=(nb_time_steps,w,h,d)))
+    model.add(LSTM(units=nb_lstm_outputs)) #, input_shape=(nb_time_steps, nb_input_vector)
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.fit(X_train, Y_train, epochs=100, batch_size=128, verbose=1, validation_data=(X_val,Y_val))
+    
+    print('\nTesting')
+    loss, accuracy = model.evaluate(X_test, Y_test)
+    print('\ntest loss: ', loss)
+    print('\ntest accuracy: ', accuracy)
+    input()
 
 def net_model_pretrain(src_path, labels, src_data_name, shape= (28, 28, 1)):
     file_name = '%s_pretrain_weights.hdf5'%src_data_name
@@ -395,7 +493,7 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
     h = shape[0]
     w = shape[1]
     d = shape[2]
-    LL_init("src/prolog/learn.chr")
+    LL_init("src/prolog/learn.chr") #learn.chr test.pl
     SELECT_NUM = 5 #Select 5+5 chessboard to abduce rules
     
     with open(src_data_file, 'rb') as f:
@@ -477,6 +575,8 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
             
         condition_cnt = 0  #the times that the condition of beginning to evaluate is continuously satisfied
         accuracy = 0  #accuracy of evaluation
+        total_time = 0
+        cnt = 0
         while True: 
             #Randomly select several chessboards
             select_chessboards = random_select_chessboards(chessboards_true, chessboards_false, SELECT_NUM)
@@ -485,8 +585,16 @@ def nlm_main_func(labels, src_data_name, src_data_file, shape = (28, 28, 1)):
             else:
                 abduced_map = None
             
+            begin_time = time.time()###########
             consistent_ex_ids, abduced_chessboards, abduced_map, _ = get_abduced_chessboards_labels(base_model, select_chessboards, abduced_map, False, shape)
-
+            end_time = time.time()###########
+            print("*****************Time:",end_time-begin_time)#########
+            if end_time-begin_time>0.6:
+                total_time += end_time-begin_time
+                cnt += 1
+                print("**************Avg time:",total_time/cnt)
+            #continue#############
+            
             if abduced_chessboards is None: #Failed
                 continue
             #print(abduced_chessboards)
@@ -699,6 +807,7 @@ if __name__ == "__main__":
     src_path = os.path.join(src_dir,src_data_name)
     net_model_test(src_path = src_path, labels = labels, src_data_name = src_data_name, shape = input_shape) #just test net model
     #net_model_test(src_path = src_dir+"/chessboards", labels = ['positive','negative'], src_data_name = "gen_chessboards", shape = (224,224,1)) #just test net model for whole chessboard
+    #lstm_model_test(src_data_file = 'bin_chess_data_chessboard_size_3_8.pk', shape = (28,28,1)) #just test lstm model for whole chessboard
     
     net_model_pretrain(src_path = src_path, labels = labels, src_data_name = src_data_name, shape = input_shape)
 
