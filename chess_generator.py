@@ -135,6 +135,21 @@ def generator_chess_images(image_pools, chessboards, shape, seed, is_color):
         ret.append(data)
     return ret
 
+def generate_whole_chessboard(image_pools, chessboards, shape, label):
+    h = shape[0]
+    w = shape[1]
+    chessboard_size = 8
+    cnt = 0
+    for chessboard in chessboards:
+        chessboard_img = Image.new('L',(w*8,h*8),color="white")
+        for chess in chessboard:
+            index = chess[2]
+            pick = random.randint(0, len(image_pools[index]) - 1)
+            image = Image.open(image_pools[index][pick]).convert('L').resize(shape)
+            chessboard_img.paste(image, box=(w*chess[0],h*chess[1],w*chess[0]+w,h*chess[1]+h))
+        chessboard_img.save('dataset/chessboards/'+label+'/'+str(cnt)+'.png')
+        cnt += 1
+    
 
 def get_chess_data(data_dir, sign_dir_lists, shape = (28, 28), min_chessboard_size = 2, max_chessboard_size = 10, tmp_file_prev = 
 None, seed = None, train_num_per_size = 500, test_num_per_size = 100, is_color = False):
@@ -153,6 +168,7 @@ None, seed = None, train_num_per_size = 500, test_num_per_size = 100, is_color =
         test_chess = generator_chess_by_max_size(min_chessboard_size, max_chessboard_size, num_per_size = test_num_per_size, label = label)
         print(train_chess)
         print(test_chess)
+        generate_whole_chessboard(train_pool, train_chess, shape, label)
         ret["train:%s" % (label)] = generator_chess_images(train_pool, train_chess, shape, seed, is_color)
         ret["test:%s" % (label)] = generator_chess_images(test_pool, test_chess, shape, seed, is_color)
 

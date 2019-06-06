@@ -1,0 +1,68 @@
+
+:- module(test,[abduce_consistent_insts/1,abduce_consistent_inst/3]).
+
+:- use_module(library(chr)).
+:- use_module(library(thread)).
+:- use_module(library(chr/chr_runtime)).
+:- use_module(library(apply)).
+:- chr_constraint chess/3. 
+
+
+
+%% If return false, it conflicts.
+%% Can be used to learn type. But there are only three types of chess and three types of rules, so we don't use metagol now.
+check(X1,X2,Y1,Y2):-(X1=:=X2;Y1=:=Y2).
+chess(X1,Y1,0), chess(X2,Y2,_) ==> check(X1,X2,Y1,Y2) | fail.
+chess(X1,Y1,1), chess(X2,Y2,_) ==> (X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | fail.
+chess(X1,Y1,2), chess(X2,Y2,_) ==> (X1=:=X2;Y1=:=Y2;X1-X2=:=Y1-Y2;X1-X2=:=Y2-Y1) | fail.
+%% s(X) :- chess(4,0,0), chess(6,1,X), chess(1,2,0), chess(3,3,1), chess(5,3,1), chess(3,6,1), chess(7,4,2), chess(0,5,2).
+%%% member(X,[0,1,2]),s(X).
+
+caller(X,Y) :- ((call(X)->fail;Y=fail));Y=true.
+call_and_undo(X) :- (((call(X)->fail;Y=fail));Y=true),!,(Y->true;fail).
+%concurrent_maplist(test:caller,[test:s1,test:s2,test:s3,test:s3,test:s2],Y)
+
+s1() :- \+ (chess(1,1,2),chess(3,3,2)).
+s2() :- chess(1,0,2),chess(2,2,0).
+s3() :- chess(2,1,1),chess(0,2,0).
+
+
+
+% abduce_consistent_insts([[[[1, 1, 2], [3, 3, 2]], [], false], [[[1, 0, 2], [2, 2, 0]], [], true], [[[2, 1, 1], [0, 2, 0]], [], true]]).
+abduce_consistent_insts([Parameter|Parameters]):-
+    Fun =.. [abduce_consistent_inst|Parameter],
+    writeln(Fun),
+    call(Fun),
+    abduce_consistent_insts(Parameters).
+abduce_consistent_insts([]).
+
+
+abduce_consistent_inst(Exs,Vars,Label):-
+    add_member(Vars,X_mem),
+    add_chess(Exs,ChessExs),
+    list_to_conj(ChessExs,ChessExsConj),
+    %writeln(ChessExsConj),
+    (Label -> ChessExsConjLabel=[(ChessExsConj)] ; ChessExsConjLabel=[\+ (ChessExsConj)]),
+    %writeln(ChessExsConjLabel),
+    append(X_mem,ChessExsConjLabel,X),
+    list_to_conj(X,Y),
+    writeln(Y),
+    call(Y).
+    
+add_chess([Ex|Exs],[ChessEx|ChessExs]):-
+    ChessEx =..[chess|Ex],
+    add_chess(Exs,ChessExs).
+add_chess([],[]).
+
+% [_1,_2,_3,_4]
+add_member([Var|Vars],[Member_re|Member_res]):-
+    Member_re =..[member,Var,[0,1,2]],
+    add_member(Vars,Member_res).
+add_member([],[]).
+
+% convert a list of term to a conjunction
+list_to_conj([H], H) :- !.
+list_to_conj([H | T], ','(H, Conj)) :-
+    list_to_conj(T, Conj).
+    
+   
