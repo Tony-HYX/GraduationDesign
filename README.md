@@ -1,4 +1,4 @@
-# NLM-Reproduce
+# GraduationDesign
 
 
 1. Install Swipl
@@ -39,11 +39,11 @@ pip3 intall keras
 
 5. Run equaiton generator
 ```
-python3 equation_generator.py
+python3 chess_generator.py
 ```
 
 6. Change arguments in test_keras_mnist4.py and run
 ```
-python3 test_keras_mnist4.py
+python3 chess_mnist4.py
 ```
 
