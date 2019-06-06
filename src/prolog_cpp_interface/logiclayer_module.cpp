@@ -477,14 +477,13 @@ LogicLayer_abduceChessInstFeature(PyObject * self, PyObject *args) {
 
     while (PL_next_solution(q)) {
         Py_PlTerm *t = Py_PlTerm_fromPlTerm(av[0]);
-        Py_INCREF(t);
         PyList_Append(re, (PyObject *) t);
+        Py_DECREF(t);
     }
     PL_close_query(q);
     PL_reset_term_refs(av.a0);
     PL_discard_foreign_frame(fid);
 
-    Py_INCREF(re);
     return re;
 }
 
@@ -538,7 +537,7 @@ LogicLayer_evalChess(PyObject * self, PyObject *args) {
     PL_reset_term_refs(av.a0);
     PL_discard_foreign_frame(fid);
     PyObject *ans = PyBool_FromLong(result);
-    Py_INCREF(ans);
+    //Py_INCREF(ans);
     return (PyObject *) ans;
 }
 
@@ -689,6 +688,7 @@ PlTerm2Py(PlTerm term) {
             PyObject *e = PlTerm2Py(t);
             if (PyList_Append(re, e) < 0)
                 return NULL;
+            Py_DECREF(e);
         }
 
         break;
@@ -697,8 +697,10 @@ PlTerm2Py(PlTerm term) {
         //cout << (char *) term << " is an atom." << endl;
         if (strcmp((char *) term, "true") == 0) {
             re = Py_True;
+            Py_INCREF(re);////////////
         } else if ((strcmp((char *) term, "false")) == 0) {
             re = Py_False;
+            Py_INCREF(re);//////////////
         } else {
             re = PyUnicode_FromString((char *) term);
         }
@@ -735,7 +737,7 @@ PlTerm2Py(PlTerm term) {
         
     }
 
-    Py_INCREF(re);
+    //Py_INCREF(re);
     return re;
 }
 
